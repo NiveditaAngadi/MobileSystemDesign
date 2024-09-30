@@ -1,4 +1,4 @@
-# MobileSystemDesign
+# Mobile System Design
 Provides the information about the Mobile System Design Interview
 
 What are the expectations from this kind of Interview?
