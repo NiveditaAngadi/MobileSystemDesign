@@ -1,5 +1,8 @@
-Mobile Architecture patterns: MVC, MVP, MVVM, MVI, VIPER, REDUX, etc. It would be good to know about them and about the conceptions behind each of them. 
+https://www.youtube.com/watch?v=QmBZ9wJguS4&list=PLED4k3CZkY9R9mhRW5V74gS9cVTp28CbK&index=18
+https://www.youtube.com/watch?v=AUbIY9A2Wfg&t=1057s
 
+
+Mobile Architecture patterns: MVC, MVP, MVVM, MVI, VIPER, REDUX, etc. It would be good to know about them and about the conceptions behind each of them. 
 
 1. MVC 
 2. MVP 
@@ -7,3 +10,86 @@ Mobile Architecture patterns: MVC, MVP, MVVM, MVI, VIPER, REDUX, etc. It would b
 4. MVI 
 5. VIPER 
 6. REDUX 
+
+Monolithic Architecture
+In monolithic architecture enitire app contained in only one module. 
+Only one test target. 
+
+Problems with Monolithic Architecture
+1. Initial scope, the monolithic architecture seems appropriate. 
+2. But, as time passes, it gets difficult to maintain a clean structure.
+3. The additions to the project can be more difficult to implement. 
+Modules are keep on increasing and dependecies between them keep on increasing. 
+For example - There me be circular dependencies - this will be the problem in the future. 
+
+Solution to handle the issues faced in the monolithic architecture is, Modular architectcure. 
+
+For example:
+Consider an application - TV Shows. 
+It has - Login, TV shows display feature. 
+1. We can develop it as "Horizontal Modular Architecture"
+
+Top Layer
+1. App Layer -> 
+   a. Places where all the modules come together 
+   b. All project resources 
+
+2. Feature Layer -> TV shows screen modules 
+  a. Login -> Login VIPER module, Login Model 
+  b. Home -> Home VIPER module, Home model 
+  c. Tests -> Tests for modules
+
+3. Core Layer -> TV shows core 
+  a. Utils -> All shared extensions and UI components. 
+  b. Data -> All shared models, and networking code
+  c. VIPER -> All shared VIPER code
+  d. Tests -> Tests for core. 
+
+2. We can develop it as "Vertical Modular Architecture" 
+
+App layer - TV Shows 
+
+Login -> VIPER module, Core, Resources, Tests 
+
+Home -> VIPER module,  Core, Resources, Tests 
+
+3. We can develop with the Hybrid Approach 
+1. App layer -> TV Shows 
+ a. Places where all the modules come together 
+ b. All project resources  
+
+2. Login 
+  a. VIPER module, Tests 
+
+3. Home 
+  a. VIPER module, Tests 
+
+4. Core Layers 
+  a. Utils -> All shared extensions and UI components. 
+  b. Data -> All shared models, and networking code
+  c. VIPER -> All shared VIPER code
+  d. Tests -> Tests for core. 
+
+
+Modularization can be done with the help of Cocoa Pods and SPM (Swift Package Manager) 
+
+In case of CocoaPods -> you will create a pod spec files. Mention the related pods info in the module. 
+For example. 
+You will have TVShowsCore.spec, TVShowsLogin.Spec
+
+In case of SPM, 
+Step 1: Create a packages directory -> To hold your custom packages
+Step 2: Create new package. -> TVShowsCore -> You will get package.swift configuration file. 
+Step 3: Add it as local package to the project 
+Step 4: Drag and drop all project files to the desired package until you get the wanted structure. 
+
+Benefits of Modular architecture 
+1. Much cleaner and more maintainable project architecture 
+2. Less merge conflicts 
+3. Easier to add new featrues 
+4. No circular dependencies
+
+
+
+
+
