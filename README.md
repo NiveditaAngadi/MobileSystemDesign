@@ -56,7 +56,7 @@ Before start design
 Possible System design questions:
 1. Maintainability: are we designing MVP or PoC or full scale system? How big is the team which will implement my design?
 2. Testability
-3. Scalability/Performance: Cross platform? Limitations of the technology and compatible versions of the OS for platforms. Discuss the impact of third party libaries on perfromance, battery life etc. 
+3. Scalability/Performance: Cross platform? Limitations of the technology and compatible versions of the OS for platforms. Discuss the impact of third party libaries on performance, battery life etc. 
 4. Security: Personal information storage in app, Pros and Cons, various method to store sensitive information.
 5. Availability - Ability to work offline, limitation of OS version, phone/tablet choice, limitation of storage size, screen sizes etc.
 6. High-Level System Design - What part of the services and the data should be implemented/stored on the server and what part should be implemented/stored on the mobile device.
