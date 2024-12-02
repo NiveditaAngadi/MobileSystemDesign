@@ -43,7 +43,8 @@ To implement modular architecture, iOS developers can take advantage of,
  - Each framework can contain views, models, view controllers, and other components, while exposing only the necessary public API's. 
 
 2. Swift Packages 
- - With Swift Package Manager (SPM), you can break down your code into separate Swift packages. Swift packages serve as lightweight modules that can be shared across multiple projects or teams.
+ - With Swift Package Manager (SPM), you can break down your code into separate Swift packages. 
+Swift packages serve as lightweight modules that can be shared across multiple projects or teams.
  - SPM handles versioning and dependencies, making it a popular choice for modularizing Swift code.
 
 3. CocoaPods/Carthage
@@ -58,14 +59,16 @@ Let’s assume you are building an e-commerce app. You could break the app into 
 	4.	Networking Module: Manages API requests, responses, and error handling.
 	5.	UI Component Module: Contains reusable UI components such as buttons, forms, and navigation elements.
 
-Each module is developed independently and communicates through well-defined interfaces (e.g., protocols or delegates). You can use Dependency Injection to provide services like authentication or network calls to modules that need them, without tightly coupling them.
+Each module is developed independently and communicates through well-defined "interfaces" (e.g., protocols or delegates). 
+You can use "Dependency Injection" to provide services like authentication or network calls to modules that need them, without tightly coupling them.
 
 Best Practices for Modular Architecture in iOS
 
 	1.	Start Small: If your app is small, you can start with one or two modules and gradually expand.
 	2.	Clear Boundaries: Define clear boundaries between modules. Each module should have a single responsibility and should communicate with other modules through well-defined interfaces.
 	3.	Code Reviews: Ensure that your code reviews focus on maintaining modularity by avoiding tight coupling or breaking encapsulation.
-	4.	Avoid Premature Optimization: Don’t over-modularize from the start. Focus on the parts of the app that naturally lend themselves to separation, such as networking, data models, or external services.
+	4.	Avoid Premature Optimization: Don’t over-modularize from the start. Focus on the parts of the app that naturally lend themselves to separation,
+		such as networking, data models, or external services.
 
 Challenges of Modular Architecture
 
