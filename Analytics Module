@@ -1,0 +1,174 @@
+Design Analytics module in the App. 
+1. Follow the modular architecture. 
+2. Collect user interactions data and app events. 
+3. Able to support multiple analytics platforms (e.g: Google analytics, Firebase, Mixpanel)
+4. Provide easy extensibility to add/remove analytics providers. 
+5. Ensure privacy and compliance with regulations (e.g: GDPR, CCPA)
+
+Designing an analytics module in a modular architecture for an iOS app involves breaking the feature into well-defined components that can function independently 
+but work seamlessly when integrated. 
+This approach ensures reusability, maintainability, and scalability. 
+
+High-level architecture
+Modular architecture ensures the "Analytics Module" is independent and can easily integrated into the app. 
+The core layers of the design are, 
+1. Analytics Core
+2. Analytics Provider
+3. Events Module 
+4. Public API 
+
+1. Analytics core 
+This is the heart of the module. 
+Responsible for event tracking, dispatching, and provider management.
+Acts as single source of truth for the app analytics. 
+Process and dispatches the events. 
+Error handling and fallback mechanisms
+
+public class AnalyticsManagr {
+  public static let shared = AnalyticsManager()
+
+  private var providers: [AnalyticsProvider] = [] 
+  private init() {} 
+
+  // Add provider dynamically 
+  public func addProvider(_ provider: AnalyticsProvider) {
+   providers.append(provider)
+  }
+
+  // Log events 
+  public func logEvent(name: String, parameters: [String: Any]? = nil) {
+    for provider in providers { 
+      provider.logEvent(name: name, parameters: parameters)
+    }
+  }
+}
+
+2. AnalyticsProviders
+Abstract platform-specific analytics SDKs (e.g., Firebase, MixPanel) 
+Enables pluging in/out providers without affecting the app
+
+Each provider implements a common protocol, allowing the core to interact with them uniformly. 
+public protocol AnalyticsProvider { 
+  func logEvent(name: String, parameters: [String: Any]?)
+}
+
+For example: 
+Firebase 
+
+import FirebaseAnalytics 
+public class FirebaseAnalyticsProvider: AnalyticsProvider {
+ public init()
+
+public func logEvent(name: String, parameters: [String: Any]?) {
+ FirebaseAnalytics.logEvent(name, parameters: parameters)
+  }
+}
+
+import Mixpanel
+
+public class MixpanelAnalyticsProvider: AnalyticsProvider {
+    public init() {}
+
+    public func logEvent(name: String, parameters: [String: Any]?) {
+        Mixpanel.mainInstance().track(event: name, properties: parameters)
+    }
+}
+
+3. Event Models 
+Define standarised event names and parameters to maintain consistency across modules.
+
+public enum AnalyticsEvent {
+    case userSignedIn(userID: String)
+    case productViewed(productID: String)
+
+    // Standardized event conversion
+    func toDictionary() -> (name: String, parameters: [String: Any]?) {
+        switch self {
+        case .userSignedIn(let userID):
+            return ("user_signed_in", ["user_id": userID])
+        case .productViewed(let productID):
+            return ("product_viewed", ["product_id": productID])
+        }
+    }
+}
+
+let event = AnalyticsEvent.userSignedIn(userID: "12345")
+let (name, parameters) = event.toDictionary()
+AnalyticsManager.shared.logEvent(name: name, parameters: parameters)
+
+4. Public APIs
+	•	Exposes functions for the app modules to log events (e.g., logEvent(name:parameters:)).
+
+Expose a lightweight, easy-to-use interface for other modules.
+
+public struct Analytics {
+    public static func logEvent(_ event: AnalyticsEvent) {
+        let (name, parameters) = event.toDictionary()
+        AnalyticsManager.shared.logEvent(name: name, parameters: parameters)
+    }
+}
+
+5. Privacy and Compliance 
+Add privacy-related mechanisms to handle user preferences. 
+ - Allow users to opt-out of analytics 
+ - Ensure no personlly identifiable information (PII) is logged without consent. 
+
+public class PrivacyManager {
+  public static var isAnalyticsEnabled = true 
+}
+
+public class AnalyticsManager {
+    // Modified logEvent to respect privacy settings
+    public func logEvent(name: String, parameters: [String: Any]? = nil) {
+        guard PrivacyManager.isAnalyticsEnabled else { return }
+        for provider in providers {
+            provider.logEvent(name: name, parameters: parameters)
+        }
+    }
+}
+
+6. Integration 
+App module usage
+
+// AppDelegate or main entry point
+AnalyticsManager.shared.addProvider(FirebaseAnalyticsProvider())
+AnalyticsManager.shared.addProvider(MixpanelAnalyticsProvider())
+
+// Log an event
+Analytics.logEvent(.productViewed(productID: "98765"))
+
+7. Testing Analytics 
+
+You can create a MockAnalyticsProvider for unit testing.
+public class MockAnalyticsProvider: AnalyticsProvider {
+    public var loggedEvents: [(String, [String: Any]?)] = []
+
+    public func logEvent(name: String, parameters: [String: Any]?) {
+        loggedEvents.append((name, parameters))
+    }
+}
+
+Usage: 
+let mockProvider = MockAnalyticsProvider()
+AnalyticsManager.shared.addProvider(mockProvider)
+
+Analytics.logEvent(.userSignedIn(userID: "test_user"))
+assert(mockProvider.loggedEvents.contains { $0.0 == "user_signed_in" })
+
+8. Modular Packaging 
+ - Package the Analytics module as a Swift Package(AnalyticsModule)
+ - Make providers optional dependencies in the package
+ - Use dependency injection to integrate the module into the main app. 
+
+9. Future enhancements 
+- Add support for advanced event processing(e.g.: batching events) 
+- Implement offline mode with persistent storage of events 
+- Include real-time analytics dashboards or reporting. 
+
+Diagram:
+App Module -> Analytics Module -> Analytics Core -> [Firebase Analytics Provider, MixPanel Analytics Provider]
+
+
+Design in Coupons App
+
+
