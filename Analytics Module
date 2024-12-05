@@ -1,3 +1,5 @@
+Data Analytics Module
+
 Design Analytics module in the App. 
 1. Follow the modular architecture. 
 2. Collect user interactions data and app events. 
@@ -158,8 +160,7 @@ assert(mockProvider.loggedEvents.contains { $0.0 == "user_signed_in" })
 8. Modular Packaging 
  - Package the Analytics module as a Swift Package(AnalyticsModule)
  - Make providers optional dependencies in the package
- - Use dependency injection to integrate the module into the main app. 
-
+ - Use dependency injection to integrate the module into the main app.
 9. Future enhancements 
 - Add support for advanced event processing(e.g.: batching events) 
 - Implement offline mode with persistent storage of events 
@@ -170,5 +171,50 @@ App Module -> Analytics Module -> Analytics Core -> [Firebase Analytics Provider
 
 
 Design in Coupons App
+Core Modules in Analytics 
+1. DataReporter - Is a class contains list of analytics platforms (DataObservers) and responsible to reportEvent. 
+
+reportEvent is the method - which has two parameters.
+1. Event -> DataReporterEvent (Visit, Error(Enum defines list of errors in system), Action(enum defines list of actions), System(enumeration defines list of system events))
+2. Source -> DataReporterSource (Such as the model/feature in the app - signIn, signUp pages etc) 
+
+public protocol DataReporterContract {
+    var observers: [DataReporterObserverContract] { get }
+
+    func reportEvent(_ event: DataReporterEvent, source: DataReporterSource?)
+}
+
+public protocol DataReporterObserverContract {
+    var requiresTrackingAuthorization: Bool { get }
+
+    func onEvent(_ event: DataReporterEvent, source: DataReporterSource?)
+}
+
+public final class DataReporter: DataReporterContract {
+
+ public var observers: [DataReporterObserverContract] = [FacebookDataObserver(),
+                                                            AppleDataObserver()]
+  observer.append(FirebaseDataObserver()) 
+  observer.append(AmplitudeDataObserver()) 
+  observer.append(BrazeDataObserver()) 
+}
+
+public func reportEvent(_ event: DataReporterEvent, source: DataReporterSource?) {
+  observers.forEach { $0.onEvent(event, source: source) }
+ }
+
+Individual Observer/Analytics provider responsible for handling the DataReporterEvent - such as visit, action, error and system event. 
+
+Analtics Constants -> is a file defines the set of events/constants used by the each provider. 
+Firebase - has seperate enum defining the event names/screen names.
+
+
+Appdelegate initiate the DataReporter class. 
+
+Presenter (Base presenter) - creates the datareporter (delegate) object and calss the - reportEvent method to report event in the respective analytics provider.
+
+
+
+
 
 
