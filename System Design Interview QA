@@ -1,0 +1,113 @@
+
+System design questions and answers 
+
+1. Design a modular architecture for a scalable iOS Application. 
+When desigining iOS Application which is scalable, maintainable, optimised and testable, follow the modular architecture. 
+
+App has modules, which can be plugin and play effectively. 
+Team can handle each modules by implementing, testing features in the module. 
+These modules can be reused easily in another project. 
+Modules could be sharable as package. Swift Packages. 
+Modules are independent and scalable. 
+Integration would be easier - dependency injection, providing the public interfaces via protocols. 
+
+2. How would you design a modular architecture for an iOS app to ensure scalability, testability and maintainability?
+
+Usecase: 
+A large e-commerce app where different teams work on features like cart, search, and user profile. 
+
+Solution:
+- Break the app into feature modules (e.g., SearchModule, CartModule).
+- Use Coordinator Pattern to manage navigation between modules.
+- Define shared services (e.g., NetworkManager, AnalyticsService) in a Core module.
+- Adopt a plugin architecture for independent feature teams.
+- Use Swift Package Manager or custom frameworks for modularization.
+
+3. Design an Offline Sync framework.
+How would you design a framework to handle offline data synchronization in an iOS app?
+
+Requirements:
+  Sync data between a local database and a remote server.
+  Handle conflicts, retries, and connectivity issues.
+
+Solutions:
+ Use Core Data or Realm for local storage.
+ Implement a Queue System to track changes.
+ Apply a conflict resolution strategy (e.g., Last Write Wins, Merging Changes).
+ Use background tasks to periodically sync data.
+ Use Reachability APIs to monitor connectivity.
+
+4.  Real-Time Notifications in an iOS App
+How would you design a system for delivering real-time notifications in an iOS app?
+Solution:
+Use Apple Push Notification Service (APNs) for server-to-device communication.
+Implement WebSocket-based messaging for in-app real-time updates.
+Ensure notification data is encrypted for security.
+Use silent notifications for background updates.
+Integrate a fallback mechanism to retry failed notifications.
+
+5. Design a Dynamic Feature Delivery System
+How would you design a system that allows delivering new features to users dynamically?
+
+Use Remote Config (e.g., Firebase Remote Config) for feature toggling.
+Store features as dynamically loaded modules.
+Use a microservices architecture to deliver feature configuration.
+Implement a robust fallback mechanism for feature failures.
+Use a local cache for feature configurations to minimize API calls.
+
+6. Handle App Configurations Dynamically
+How would you design a system for managing dynamic app configurations?
+
+Use a Remote Config Service like Firebase Remote Config.
+Provide a fallback to a locally cached configuration in case of server failure.
+Implement versioning for configurations to avoid breaking changes.
+Ensure configurations are encrypted for security.
+
+7. Design a Social Media Feed
+How would you design a system for rendering a real-time social media feed?
+
+- Fetch posts in batches using pagination.
+- Use diffable data sources for efficient updates to the feed.
+- Implement pull-to-refresh for user-initiated updates.
+- Cache posts locally for offline viewing.
+- Use WebSockets or polling to fetch real-time updates.
+
+8. Design a Video Streaming App
+How would you design a video streaming app like YouTube or Netflix?
+
+- Use AVPlayer for video playback.
+- Implement adaptive streaming with HLS to optimize bandwidth usage.
+- Cache video segments locally for smoother playback.
+- Use CDNs (Content Delivery Networks) for high performance.
+- Provide robust error handling for buffering and connection failures.
+
+9. Secure Data Storage in an iOS App
+How would you design a secure data storage solution for sensitive user data?
+
+ - Use Keychain for storing credentials and sensitive data.
+ - Encrypt files using FileProtection APIs.
+ - Avoid storing sensitive data in plaintext or unencrypted databases.
+ - Use secure hashing algorithms for passwords (e.g., PBKDF2, SHA256).
+ - Implement biometric authentication for accessing sensitive data.
+
+10. Multi-Language support in a Global App
+How would you design a system to support multiple languages in an iOS app?
+
+- Use Localizable.strings files for static text.
+- Use NSLocalizedString for fetching localized strings dynamically.
+- Provide a fallback language if a specific translation is missing.
+- Load JSON or XML files from a remote server for dynamic content localization.
+- Use Locale APIs to detect the user’s preferred language and region.
+
+11. Optimize Image Loading in a Photo Gallery App
+How would you optimize image loading and rendering in a photo gallery app?
+
+- Use lazy loading with UICollectionView or UITableView.
+- Cache images locally using URLCache or third-party libraries like SDWebImage.
+- Compress images to an optimal resolution before displaying.
+- Implement prefetching strategies for smoother scrolling.
+- Use background threads for image processing to avoid blocking the main thread.
+
+
+
+
