@@ -1,5 +1,6 @@
 
-System design questions and answers 
+System design questions and answers.
+These system design questions will test your ability to think at a high level and design systems that are scalable, robust, and maintainable. 
 
 1. Design a modular architecture for a scalable iOS Application. 
 When desigining iOS Application which is scalable, maintainable, optimised and testable, follow the modular architecture. 
