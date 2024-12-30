@@ -18,4 +18,28 @@ how they solve their challenges.
 5. Ask friends and colleagues to review your designs, get feedback.
 6. Practice mock interviews 
 
+Answer questions
+
+1. How you will handle UI intensive operations? 
+- Infinite scrolling, heavy animations or complex transitions
+By pre-fetch data 
+Create a buffer 
+
+2. Does app load heavier data like images, videos, audio?
+How do it asynchronously? 
+Having a separate service to handle the retrieval of the media data asynchronously, notifying the UI when ready. 
+What may be the bottlenecks and challenges of your approach.
+
+3. Testing
+How you ensure quality of your app?
+Explain your testing strategy?
+- Explain your testing strategy- how will you apply the different types of tests (unit tests, integration tests, and UI/Functional tests to cover end-to-end 
+the main app flows)
+- Highlight the strengths of your architecture explaining how easy it is to test each particular component. 
+- The use of dependency injection to make writing tests easier. 
+
+4. Monitoring 
+How do you handle the system correctness and facilitate a fast response when things go downhill. 
+- Crash reporting and logging 
+- Analytics 
 
