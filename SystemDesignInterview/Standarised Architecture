@@ -1,0 +1,54 @@
+What is Application Architecture?
+The structure and tools used to bring smaller components together to form an application. 
+Concerned with the structure of an application. 
+More specifically, it looks at both how applications are divided into different interfaces and conceptual layers, and the control flow and data flow 
+paths taken by different operations between and within these different components. 
+Application architecture includes many expectations about how components should be constructed, whether components should have compile-time or runtime references to each other, 
+how data in different components should be read or mutated, and what paths state changes should take through the application structure.
+
+At the highest level, an application architecture is a basic set of categories into which different application components are seperated. 
+We call these different categories "layers"  - a collection of interfaces and other code that conform to some basic rules and responsibilities. 
+
+The most of these categories are the model layer and the view layer. 
+
+Model Layer -> An abstract description of the application's contents without any dependence on the application framework(such as UIKit)
+Model layer typically contains both model objects(examples in the Recordings app include folders and recordings) and coordinating objects(for example, objects that persist data on disk, such as the Store in our example
+application). The part of the model that’s persisted to disk is called the document model.
+
+View Layer - Is the application framework-dependent part of that makes the model layer visible and user interactable, turning the model layer into an application. 
+When writing iOS applications, the view layer almost always uses UIKit directly.
+
+Sometimes, model or view instances are represented by structs or enums rather than objects. 
+View objects typically form a single view hierarchy, in which all objects are connected in a tree structure with the screen at the trunk, 
+windows within the screen, and increasingly smaller views at the branches and leaves.
+
+The most important reason to define a model layer is to have a single source of truth in our program that is clean and well behaved and not governed by the 
+implementation details of the application framework.
+
+An application framework provides infrastructure upon which we can build applications. 
+Application frameworks - UIKit, AppKit, WatchKit
+
+If the model layer is kept seperate from the application framework, we can use it completely outside the bounds of the application. 
+We can easily run it in a seperate testing harness, or we can write a new view layer using a different application framework and use our model 
+layers in Android, macOS, or windows version of the application. 
+
+Architecture is an important topic in app development since apps typically integrate a large number of diverse components - user events, network services, 
+file services, audio services, graphics and windowing services, and more. 
+Integrating these components while ensuring state and state changes are reliably and correctly propogated between them requires a strong set of rules about how 
+the components should interoperate. 
+
+Applications are basically feedback loop. 
+
+
+Design patterns - Sets of repeatedly applied design rules
+
+MVC (Model, View, Controller)
+
+View 
+
+Controller 
+
+Model 
+
+
+
