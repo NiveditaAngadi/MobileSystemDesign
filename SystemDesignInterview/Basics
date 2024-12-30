@@ -1,0 +1,217 @@
+1. What is system design interview?
+System design interview primarily focus on the design and architecture. 
+
+As a candidate, you will likely be tasked with the technical design of a mobile application or a feature. 
+
+For example:
+1. Design a photo-sharing app (Instagram)
+2. Design a messanger app (Whats app)
+3. Design a news feed feature(Twitter)
+
+Aim -> Process of transforming an abstract set of requirements into a precise and meticulous solution. 
+Breadth of knowledge through the different decisions you make along the way. 
+
+2. Time duration of an interview and division of sections. 
+45 mins to 1 hour 
+- 6 - 8 min: Introductions and a brief prologue by your interviewer
+- 4 - 5 min: Problem statement
+- 25 - 30 min: Design and discuss your solution
+- 5 min: Your time to ask questions to the interviewer
+
+You usually score extra points for proposing a solution fast
+and then improving it gradually. 
+In most cases, the initial question will
+not be the whole exercise, and your interviewer will expect to cover a
+few follow-ups.
+
+3. What is the evaluation criteria?
+1. Your ability to navigate an ambiguous problem by asking the right questions, shaping it into a concrete set of requirements
+2. Your thinking process: How you break a large problem into smaller parts while keeping the whole picture connected and meeting all requirements.
+3. How you make decisions, evaluating different alternatives and trade-offs.
+4. Knowledge - familiarity with technology, suggest solution to server side. 
+5. Communication and collaboration skills.
+
+Strickly balancing all areas/topics of the design. 
+
+Steps
+1. Understand the problem - Think of the information you have been given and ask relevant questions. 
+2. Define a scope - Define the functional requirements.
+3. Identify technical requirements 
+4. Propose a high-level design 
+5. Deep-dive into one component 
+6. Wrap up 
+
+
+Possible relevant questions
+1. What are we being asked to design?
+2. Who is the user, and how will they use our system?
+3. What's the initial number of users? And the expected growth?
+4. Are we being given an initial design/wireframes, or should we
+produce them as well?
+5. Are we designing an MVP or final-product?
+6. Are we building this from scratch, or can we leverage any existing
+components? Any existing patterns/architecture we should follow?
+7. How big is the team who will implement and maintain our system?
+8. Are we expected to design just the mobile application or other parts
+of the overall system too (e.g. API)?
+9. Is it iOS or Android only, or cross-platform? Shall we support smartphones, tablets, or both?
+
+Think of similar famous apps or systems you have used in the past and how they solve a similar problem. 
+What features they offer, and what's their primary functionality. 
+You can suggest many potential features
+you can think of and seek agreement with your interviewer on which
+features you will focus on in this particular design session. It should be
+quite a collaborative part of the interview.
+
+Once scope is defined, slowly unflold the solution which you want to propose. 
+
+Once functional requirements are clarified, you should switch hats and start thinking on the technical 
+considerations necessary to build a solution capable of providing the desired user experience you and your interviewer agreed. 
+
+Networking:
+Most apps nowadays either share or retrieve their state form a backend. Spend a bit of time thinking about how this backend 
+might look like. 
+For most cases, a REST API will do. Is this API provided? If so,
+how does it look?
+May any features require low latency to simulate live updates?
+If so, how will you push this information to the client?
+You may need to use a more sophisticated approach than plain HTTP requests.
+You could use push notifications, WebSockets, polling, etc. Each option has trade-offs
+for you to consider.
+
+Security:
+Most apps require to communicate with other systems. Then it's obvious we will need 
+to secure those communications. 
+1. Authentication: How will your solution verify who is the user of your app(authentication) and how will it guarantee the correct level of access
+is provided(authorisation)
+2. Storing sensitive data: Will you need to save the user's credentials? Will you need to save the user's credential?
+Yes. 
+3. Secure communication: Secure communication with backend. 
+All requests follow the HTTPS protocol and are encrypted with TLS, certificate pinning etc. 
+
+Availability
+Does the app have to support offline mode?
+You can avoid your app to start with empty state when user opens it, you could use a local store to cache data (e.g Core data, Realm, SQLite, Shared Preferences etc)
+consider which one and why.
+
+What happens with image (and other media)? 
+- If needed, you can cache them locally, once retrieved from the network. 
+That's great option, but it certainly comes with a few challenges: handling multiple requests at once, cancelling expired requests, clean-up ploicy(e.g. LRU), limiting 
+concurrent requests, etc. 
+
+Scalability
+In mobile, the scalability challenges are typically a bit different from the rest of the systems. 
+In mobile apps, scalability is usually linked to growing the codebase and team working on the app. 
+Therefore, think how you could prepare your design to support new features, owned by multiple teams. 
+
+Break the UI into smaller independent components. Each of them with their stack so different people can work on them efficiently. 
+Standardise your UI by building a reusable UI components library. It reduces the code and ensures a consistent UX across the app.
+Modularise the app - split the features in individual modules(which each team can own), and extract reusable components in to shared and core modules. 
+
+Performance
+In the nowadays mobile eco-system, more and more apps differentiate themselves by offering a slick and smooth user experience. 
+To achieve it, you have to face the challenges of hiding the need to retrieve data from the network. 
+
+Some of the topics related to performance are, 
+1. Are there any UI intensive operations such as infinite list scrolling, heavy animations or complex transitions. 
+How would you support this? For example, you could pre-fetch data and create a buffer. 
+
+2. Does app load heavier data like images, videos, audio?
+If so we should think on how to do it asynchronously, so we keep our UI slick, while still offering the best possible user experience. 
+For example, by having a separate service to handle the retrieval of the media data
+asynchronously, notifying the UI when ready. What might be the
+bottlenecks and challenges of your approach?
+
+
+Testing
+How you ensure quality of your app?
+Explain your testing strategy?
+- Explain your testing strategy- how will you apply the different types of tests (unit tests, integration tests, and UI/Functional tests to cover end-to-end 
+the main app flows)
+- Highlight the strengths of your architecture explaining how easy it is to test each particular component. 
+- The use of dependency injection to make writing tests easier. 
+
+Monitoring
+How you plan to ensure the system's correctness and facilitate a fast response when things go downhill. 
+The two most important pillars are, 
+1. Crash reporting and logging 
+2. Analytics 
+
+Deployment
+How do you forsee your system going live to production?
+- CI/CD pipeline with automated releases(e.g. with Fastlane _lanes _to send builds to production, QA and beta)
+- Leveraging remote features flags enables rolling out changes gradually and decouple the release from review process (e.g. ensuring the new feature 
+is ready for a marketing campaign)
+
+Wireframe
+The main flow of the app. 
+If wireframe not provided by the interviewer, consider following steps 
+1. Draw the main screens - as boxes, describing the main content 
+2. Go over the flow - adding arrows to represents the user journey. 
+3. Add more details - to discuss each screens composition - identify main UI elements, split UI components (e.g. cards/cells in a CollectionView/TableView)
+Think about possible reusable elements. 
+
+Draw the principal systems (if required)
+You should check with your interviewer if she is expecting you to cover the end-to-end design or to focus only on the client-side.
+Most of the mobile design interview expects you to describe the client side design. 
+But its based on the role and size of the team they are interviewing.
+
+Suppose interviewer asks you to explore the end-to-end design. 
+Common elements your design will most likely need to rely on are, 
+1. Mobile clients 
+2. An API service(the layer the clients will communicate to)
+3. Backend app(the app which will do most of the heavy lifting on the backend side)
+4. Data Store (to store info in the cloud)
+5. A notification service(if notification are required)
+
+Define basic data entities
+Define the most important data entities applicable to the problem (app design and functionality)
+
+Describe the primary data end point(s). 
+Depends upon the interviewer ask - you may need to design the primary end points. 
+
+Propose the client architecture
+Time to discuss and decide which architecture and common software patterns your design will follow. 
+
+Recall the standard architectures you are familiar with (e.g.: MVC, MVP, MVVM + C, VIPER, RIB etc), as well as the most typical patterns to abstract and 
+encapsulate logic at the different layers of your system (e.g.: Repositories, Use cases, Services, etc.)
+
+Consider their strengths and weaknesses when applied to the problem at hand. 
+
+Simple and trend-agnostic clean architecture composed of the following pieces. 
+1. Presentation layer (UI) - MVVM + Coordinator, to handle views and controller, or activities and fragments and navigation logic. 
+
+2. Domain layer (Business logic): Use cases, to combine data from the user and repositories. 
+
+3. Data layer: 
+   Repositories, to retrieve data from the network or the local store. 
+   Network data, Individual endpoints on top of the typical API client 
+   Persisted data, individual endpoints on top of the typical API. 
+
+4. Helper Services:
+   To extract functionality that might be shared by different features, for example
+   - Network service 
+   - Session service (to hold a user session's info)
+   - Credential Store (to handle reading and writing of user credentials) 
+
+
+Detail level design
+Time to examine in more detail one of your components. 
+Approach for detail level design.
+1. Choose the most interesting screen and draw its architecture. 
+  Cover all layers from the different UI components, VMs, Repos, Endpoints/Sockets, Network Layer, Local Store etc. 
+2. Trace the dependendies (arrow mark from component to another)
+3. Walk over the flow - from the user's point of view - what is the user experience? what does the user see at every step?
+Describe the possible view states - Loading, Error, No data and Data) 
+4. Explain the data flow - Data transformation that happen along the way Network Model -> Business Model -> View State Model. 
+Draw arrows to show data flow (different to the dependency arrows, e.g: use dotted arrows, another color)
+5. Go-in depth into one component - Think about what might be the most challenging parts, if the design may have any bottlenecks, etc. 
+For example - 
+- "Real-Time" updates. 
+- Image caching(Challenges, NSOperationQueue)
+- Reusing cells (Preparing VMs)
+- Buffering data requests to improve UX
+
+
+
+
