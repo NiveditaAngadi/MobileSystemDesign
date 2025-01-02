@@ -23,7 +23,12 @@ Data Source:
 JSON data file - fetch information from the file to app for further functionality. 
 
 Architecture
+App follows the MVVM architecture to develop and test the functionalities. 
 
+M - Model - represents the data part of the app 
+Following are the models of the app
+1. Video 
+2. Comment 
 
 
 
