@@ -1,0 +1,29 @@
+This applications is responsible for gthe "Live" Stream Playback and Commenting functionality. 
+
+This app is responsible for creating the UI that replicates interactive live streaming (such as TikTok live streaming). 
+
+Design: 
+Figma 
+https://www.figma.com/design/nqzIeY0xlMTf7o5QDGLtYJ/Untitled?node-id=1-119&t=XcGxTkqOuwcLAejj-4
+
+Focus of the task: 
+Create quaility UI with smooth animations. 
+
+Technology stack:
+Swift 
+UIKit 
+AVFoundation 
+UICollectionView 
+UITableView
+StoryBoard UI design 
+Autolayout 
+Programmatic UIView creation (optional) 
+
+Data Source:
+JSON data file - fetch information from the file to app for further functionality. 
+
+Architecture
+
+
+
+
