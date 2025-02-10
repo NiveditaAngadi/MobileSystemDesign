@@ -214,7 +214,225 @@ Appdelegate initiate the DataReporter class.
 Presenter (Base presenter) - creates the datareporter (delegate) object and calss the - reportEvent method to report event in the respective analytics provider.
 
 
+Modular Architecture for an Analytics Module in an iOS App
 
+Designing an Analytics module in a modular architecture helps to achieve scalability, reusability, and separation of concerns. Here’s a complete system design for an Analytics module in a modular iOS app.
+
+1. Why Modular Architecture for Analytics?
+	•	Encapsulation: Keeps analytics logic separate from the main app.
+	•	Reusability: The module can be used across multiple apps.
+	•	Scalability: Easy to extend with new analytics providers (e.g., Firebase, Mixpanel, Segment).
+	•	Testability: The module can be unit tested independently.
+	•	Maintainability: Developers can update or replace analytics providers without affecting the app.
+
+2. High-Level Architecture
+
+The Analytics module will consist of:
+	1.	AnalyticsCore (Protocol-based abstraction layer)
+	2.	Concrete Implementations (Firebase, Mixpanel, Custom API)
+	3.	AnalyticsManager (Facade for unified API)
+	4.	Event Model (Defines event structure)
+	5.	DI (Dependency Injection) Support (To inject dependencies)
+
+3. Modular Architecture Diagram
+
+App Module
+   ├── UI Layer (SwiftUI / UIKit)
+   │   ├── LoginViewController
+   │   ├── HomeViewController
+   │   ├── ProfileViewController
+   │
+   ├── Business Logic Layer
+   │   ├── UserManager
+   │   ├── SessionManager
+   │
+   ├── Analytics Module (Separate Framework)
+       ├── AnalyticsCore (Protocol-based abstraction)
+       ├── AnalyticsManager (Singleton for event logging)
+       ├── Providers (Firebase, Mixpanel, Custom API)
+       ├── Event Model (Predefined analytics event structure)
+
+4. Implementing the Analytics Module
+
+Step 1: Define the Protocol (AnalyticsCore)
+
+Create a protocol that all analytics services (Firebase, Mixpanel, etc.) will conform to.
+
+protocol AnalyticsService {
+    func logEvent(_ event: AnalyticsEvent)
+    func logScreen(_ screenName: String)
+}
+
+Step 2: Define the Analytics Event Model
+
+Instead of passing raw event names, use a structured approach.
+
+enum AnalyticsEvent {
+    case loginSuccess(userID: String)
+    case buttonClicked(buttonName: String)
+    case purchaseCompleted(amount: Double, currency: String)
+
+    var name: String {
+        switch self {
+        case .loginSuccess: return "login_success"
+        case .buttonClicked: return "button_clicked"
+        case .purchaseCompleted: return "purchase_completed"
+        }
+    }
+
+    var parameters: [String: Any] {
+        switch self {
+        case .loginSuccess(let userID):
+            return ["user_id": userID]
+        case .buttonClicked(let buttonName):
+            return ["button_name": buttonName]
+        case .purchaseCompleted(let amount, let currency):
+            return ["amount": amount, "currency": currency]
+        }
+    }
+}
+
+Step 3: Implement Concrete Providers
+
+Firebase Analytics Implementation
+
+import FirebaseAnalytics
+
+class FirebaseAnalyticsService: AnalyticsService {
+    func logEvent(_ event: AnalyticsEvent) {
+        Analytics.logEvent(event.name, parameters: event.parameters)
+    }
+
+    func logScreen(_ screenName: String) {
+        Analytics.logEvent("screen_view", parameters: ["screen_name": screenName])
+    }
+}
+
+Mixpanel Analytics Implementation
+
+import Mixpanel
+
+class MixpanelAnalyticsService: AnalyticsService {
+    func logEvent(_ event: AnalyticsEvent) {
+        Mixpanel.mainInstance().track(event.name, properties: event.parameters)
+    }
+
+    func logScreen(_ screenName: String) {
+        Mixpanel.mainInstance().track("screen_view", properties: ["screen_name": screenName])
+    }
+}
+
+Custom API Analytics Implementation
+
+If you need to send analytics data to a backend API:
+
+class CustomAPIAnalyticsService: AnalyticsService {
+    func logEvent(_ event: AnalyticsEvent) {
+        let url = URL(string: "https://api.example.com/analytics")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = try? JSONSerialization.data(withJSONObject: event.parameters)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        URLSession.shared.dataTask(with: request).resume()
+    }
+
+    func logScreen(_ screenName: String) {
+        logEvent(.buttonClicked(buttonName: "Viewed \(screenName)"))
+    }
+}
+
+Step 4: Implement AnalyticsManager as a Facade
+
+This class acts as a singleton to expose analytics functionality in a modular way.
+
+class AnalyticsManager {
+    static let shared = AnalyticsManager()
+
+    private var providers: [AnalyticsService] = []
+
+    private init() {}
+
+    func addProvider(_ provider: AnalyticsService) {
+        providers.append(provider)
+    }
+
+    func logEvent(_ event: AnalyticsEvent) {
+        providers.forEach { $0.logEvent(event) }
+    }
+
+    func logScreen(_ screenName: String) {
+        providers.forEach { $0.logScreen(screenName) }
+    }
+}
+
+Step 5: Inject Dependencies and Initialize Providers
+
+In the AppDelegate or SwiftUI App struct, register the analytics providers.
+
+@main
+struct MyApp: App {
+    init() {
+        AnalyticsManager.shared.addProvider(FirebaseAnalyticsService())
+        AnalyticsManager.shared.addProvider(MixpanelAnalyticsService())
+        AnalyticsManager.shared.addProvider(CustomAPIAnalyticsService())
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+
+Step 6: Logging Events from the App
+
+In any view or controller:
+
+AnalyticsManager.shared.logEvent(.loginSuccess(userID: "12345"))
+AnalyticsManager.shared.logScreen("HomeScreen")
+
+5. Benefits of this Modular Analytics Architecture
+
+✅ Decoupled Analytics Providers - You can swap out Firebase or Mixpanel without modifying the app code.
+✅ Unified API for Analytics Logging - Ensures all events are logged consistently.
+✅ Supports Multiple Analytics Providers - Can log to Firebase, Mixpanel, and custom APIs simultaneously.
+✅ Easy to Extend - Adding a new analytics provider (e.g., Amplitude) only requires a new class conforming to AnalyticsService.
+✅ Dependency Injection Friendly - Allows injecting different analytics providers in unit tests.
+
+6. Additional Enhancements
+
+1. Using Combine for Reactive Analytics
+
+Instead of directly logging events, use PassthroughSubject to send events reactively.
+
+import Combine
+
+class AnalyticsPublisher {
+    static let shared = AnalyticsPublisher()
+    private var eventSubject = PassthroughSubject<AnalyticsEvent, Never>()
+
+    private init() {}
+
+    func logEvent(_ event: AnalyticsEvent) {
+        eventSubject.send(event)
+    }
+
+    func observeEvents() -> AnyPublisher<AnalyticsEvent, Never> {
+        eventSubject.eraseToAnyPublisher()
+    }
+}
+
+Any subscriber can now listen to events and process them asynchronously.
+
+2. Offline Caching for Analytics Events
+
+If the user is offline, cache analytics events using UserDefaults or CoreData and send them later.
+
+7. Conclusion
+
+This modular architecture for the Analytics module ensures that analytics services are scalable, reusable, testable, and maintainable. It abstracts implementation details, supports multiple providers, and allows easy extension.
+
+Would you like additional details on offline analytics handling, performance optimizations, or testing strategies? 🚀
 
 
 
