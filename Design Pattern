@@ -35,3 +35,6 @@ class BluetoothFactory: ProjectFactory {
 
  }
 }
+
+2. Adapter Pattern 
+Converting one interface to another, often used for API integration. 
