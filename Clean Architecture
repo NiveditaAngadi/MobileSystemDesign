@@ -1,0 +1,33 @@
+Clean architecture is a software design philosophy that seperates concerns. 
+The main goal is to create a system where business rules are isolated from external concerns like UI and databases. 
+In iOS, this means seperating your app into distinct layers with clear responsibilities. 
+
+** The layers of clean architecture in iOS ** 
+From innermost to outermost:
+1. Domain Layer: Contains business logic and entities. 
+2. Application/Use Case Layer: Orchestrates the flow of data between domain and presentation. 
+3. Interface Adapters Layer: Converts data between use cases and external formats. 
+4. Frameworks and Drivers Layer: External frameworks, UI, databases, web services. 
+
+Benefits:
+1. Testability: Each component can be tested in isolation. 
+2. Independence from frameworks: Core business logic doesn't depend on UIKit or SwiftUI
+3. UI independence: Business rules don't change when the UI changes
+4. Database independence: You can switch data sources without affecting business logic 
+
+YourApp/
+  ├── Domain/
+  │   ├── Entities/
+  │   ├── UseCases/
+  │   └── Interfaces/
+  ├── Data/
+  │   ├── Repositories/
+  │   ├── Network/
+  │   └── Storage/
+  ├── Presentation/
+  │   ├── UI/
+  │   ├── ViewModels/
+  │   └── Coordinators/
+  └── Application/
+      ├── DIContainer/
+      └── AppDelegate/
