@@ -15,6 +15,42 @@ Benefits:
 3. UI independence: Business rules don't change when the UI changes
 4. Database independence: You can switch data sources without affecting business logic 
 
+Key Layers in Clean Architecture
+From inner to outer:
+1. Domain Layer
+Contains business entities and logic
+Has no dependencies on other layers
+Pure Swift with no iOS framework dependencies
+2. Use Case Layer
+Contains application-specific business rules
+Orchestrates flow between domain and outer layers
+3.Interface Adapters Layer
+Contains repositories, presenters/view models
+Converts data between use cases and external formats
+4.Frameworks & Drivers Layer
+Contains UI (UIKit/SwiftUI), databases, networking, etc.
+Most dependent on external frameworks
+
+*** Dataflow between layers *** 
+When a user interacts with your app
+1. UI event triggers view model/ presenter method
+2. View model calls use case 
+3. Use case executes business logic and calls repository interface 
+4. Repository implementation fetches from data sources 
+5. Data flows back through the same layers, each converting to appropriate models. 
+
+This one-way dependency rule is what makes Clean Architecture powerful - when requirements change, only the relevant layers need updating.
+
+
+
+Example:
+# Clean Architecture in iOS: Comprehensive Implementation Guide
+
+## 1. Project Structure Setup
+
+Start by organizing your project into clear directories representing each layer:
+
+```
 YourApp/
   ├── Domain/
   │   ├── Entities/
@@ -31,3 +67,818 @@ YourApp/
   └── Application/
       ├── DIContainer/
       └── AppDelegate/
+```
+
+## 2. Domain Layer Implementation
+
+The Domain layer is the core of your application, containing business logic and rules.
+
+### 2.1 Entities
+
+Entities are your core business objects, independent of any UI or database.
+
+```swift
+// UserEntity.swift
+struct UserEntity {
+    let id: String
+    let name: String
+    let email: String
+    
+    // Domain-specific business rules can be implemented as methods
+    func isValidEmail() -> Bool {
+        // Email validation logic
+        return email.contains("@") && email.contains(".")
+    }
+}
+```
+
+### 2.2 Use Cases
+
+Use cases represent application-specific business rules or operations.
+
+```swift
+// UserUseCase.swift
+protocol UserUseCase {
+    func getUser(withID id: String, completion: @escaping (Result<UserEntity, Error>) -> Void)
+    func saveUser(_ user: UserEntity, completion: @escaping (Result<Void, Error>) -> Void)
+}
+
+class UserUseCaseImpl: UserUseCase {
+    private let userRepository: UserRepository
+    
+    init(userRepository: UserRepository) {
+        self.userRepository = userRepository
+    }
+    
+    func getUser(withID id: String, completion: @escaping (Result<UserEntity, Error>) -> Void) {
+        userRepository.getUser(withID: id, completion: completion)
+    }
+    
+    func saveUser(_ user: UserEntity, completion: @escaping (Result<Void, Error>) -> Void) {
+        // Business validation before saving
+        guard user.isValidEmail() else {
+            completion(.failure(ValidationError.invalidEmail))
+            return
+        }
+        
+        userRepository.saveUser(user, completion: completion)
+    }
+}
+
+enum ValidationError: Error {
+    case invalidEmail
+}
+```
+
+### 2.3 Repository Interfaces
+
+Define interfaces (protocols) that the Data layer must implement.
+
+```swift
+// UserRepository.swift
+protocol UserRepository {
+    func getUser(withID id: String, completion: @escaping (Result<UserEntity, Error>) -> Void)
+    func saveUser(_ user: UserEntity, completion: @escaping (Result<Void, Error>) -> Void)
+}
+```
+
+## 3. Data Layer Implementation
+
+The Data layer implements repository interfaces and handles data sources.
+
+### 3.1 Repository Implementation
+
+```swift
+// UserRepositoryImpl.swift
+class UserRepositoryImpl: UserRepository {
+    private let remoteDataSource: UserRemoteDataSource
+    private let localDataSource: UserLocalDataSource
+    
+    init(remoteDataSource: UserRemoteDataSource, localDataSource: UserLocalDataSource) {
+        self.remoteDataSource = remoteDataSource
+        self.localDataSource = localDataSource
+    }
+    
+    func getUser(withID id: String, completion: @escaping (Result<UserEntity, Error>) -> Void) {
+        // Try local cache first
+        localDataSource.getUser(withID: id) { [weak self] result in
+            switch result {
+            case .success(let userDTO):
+                completion(.success(userDTO.toDomain()))
+            case .failure:
+                // If local fetch fails, try remote
+                self?.remoteDataSource.getUser(withID: id) { remoteResult in
+                    switch remoteResult {
+                    case .success(let userDTO):
+                        // Update local cache
+                        self?.localDataSource.saveUser(userDTO) { _ in }
+                        completion(.success(userDTO.toDomain()))
+                    case .failure(let error):
+                        completion(.failure(error))
+                    }
+                }
+            }
+        }
+    }
+    
+    func saveUser(_ user: UserEntity, completion: @escaping (Result<Void, Error>) -> Void) {
+        let userDTO = UserDTO(from: user)
+        
+        // Save to remote
+        remoteDataSource.saveUser(userDTO) { [weak self] result in
+            switch result {
+            case .success:
+                // Update local cache
+                self?.localDataSource.saveUser(userDTO, completion: completion)
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+}
+```
+
+### 3.2 Data Sources and DTOs
+
+```swift
+// UserDTO.swift
+struct UserDTO: Codable {
+    let id: String
+    let name: String
+    let email: String
+    
+    init(from entity: UserEntity) {
+        self.id = entity.id
+        self.name = entity.name
+        self.email = entity.email
+    }
+    
+    func toDomain() -> UserEntity {
+        return UserEntity(id: id, name: name, email: email)
+    }
+}
+
+// UserRemoteDataSource.swift
+protocol UserRemoteDataSource {
+    func getUser(withID id: String, completion: @escaping (Result<UserDTO, Error>) -> Void)
+    func saveUser(_ user: UserDTO, completion: @escaping (Result<Void, Error>) -> Void)
+}
+
+class UserRemoteDataSourceImpl: UserRemoteDataSource {
+    private let networkManager: NetworkManager
+    
+    init(networkManager: NetworkManager) {
+        self.networkManager = networkManager
+    }
+    
+    func getUser(withID id: String, completion: @escaping (Result<UserDTO, Error>) -> Void) {
+        let endpoint = Endpoint.getUser(id: id)
+        networkManager.request(endpoint: endpoint, completion: completion)
+    }
+    
+    func saveUser(_ user: UserDTO, completion: @escaping (Result<Void, Error>) -> Void) {
+        let endpoint = Endpoint.saveUser(user: user)
+        networkManager.request(endpoint: endpoint, completion: completion)
+    }
+}
+
+// UserLocalDataSource.swift
+protocol UserLocalDataSource {
+    func getUser(withID id: String, completion: @escaping (Result<UserDTO, Error>) -> Void)
+    func saveUser(_ user: UserDTO, completion: @escaping (Result<Void, Error>) -> Void)
+}
+
+class UserLocalDataSourceImpl: UserLocalDataSource {
+    private let coreDataManager: CoreDataManager
+    
+    init(coreDataManager: CoreDataManager) {
+        self.coreDataManager = coreDataManager
+    }
+    
+    func getUser(withID id: String, completion: @escaping (Result<UserDTO, Error>) -> Void) {
+        // Implementation using CoreData
+        // ...
+    }
+    
+    func saveUser(_ user: UserDTO, completion: @escaping (Result<Void, Error>) -> Void) {
+        // Implementation using CoreData
+        // ...
+    }
+}
+```
+
+### 3.3 Network Layer
+
+```swift
+// NetworkManager.swift
+protocol NetworkManager {
+    func request<T: Decodable>(endpoint: Endpoint, completion: @escaping (Result<T, Error>) -> Void)
+}
+
+class NetworkManagerImpl: NetworkManager {
+    func request<T: Decodable>(endpoint: Endpoint, completion: @escaping (Result<T, Error>) -> Void) {
+        guard let url = endpoint.url else {
+            completion(.failure(NetworkError.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = endpoint.method.rawValue
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NetworkError.noData))
+                return
+            }
+            
+            do {
+                let decodedObject = try JSONDecoder().decode(T.self, from: data)
+                completion(.success(decodedObject))
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+}
+
+enum NetworkError: Error {
+    case invalidURL
+    case noData
+}
+
+// Endpoint.swift
+enum Endpoint {
+    case getUser(id: String)
+    case saveUser(user: UserDTO)
+    
+    var baseURL: String {
+        return "https://api.example.com"
+    }
+    
+    var path: String {
+        switch self {
+        case .getUser(let id):
+            return "/users/\(id)"
+        case .saveUser:
+            return "/users"
+        }
+    }
+    
+    var method: HTTPMethod {
+        switch self {
+        case .getUser:
+            return .get
+        case .saveUser:
+            return .post
+        }
+    }
+    
+    var url: URL? {
+        return URL(string: baseURL + path)
+    }
+}
+
+enum HTTPMethod: String {
+    case get = "GET"
+    case post = "POST"
+    case put = "PUT"
+    case delete = "DELETE"
+}
+```
+
+## 4. Presentation Layer Implementation
+
+The Presentation layer handles UI logic and user interactions.
+
+### 4.1 View Models
+
+```swift
+// UserViewModel.swift
+class UserViewModel {
+    private let userUseCase: UserUseCase
+    private var user: UserEntity?
+    
+    // State and binding
+    private(set) var state: Observable<ViewState> = Observable(.idle)
+    
+    init(userUseCase: UserUseCase) {
+        self.userUseCase = userUseCase
+    }
+    
+    func fetchUser(withID id: String) {
+        state.value = .loading
+        
+        userUseCase.getUser(withID: id) { [weak self] result in
+            switch result {
+            case .success(let user):
+                self?.user = user
+                self?.state.value = .loaded(UserUIModel(from: user))
+            case .failure(let error):
+                self?.state.value = .error(error.localizedDescription)
+            }
+        }
+    }
+    
+    func saveUser(name: String, email: String) {
+        guard let id = user?.id else { return }
+        
+        let updatedUser = UserEntity(id: id, name: name, email: email)
+        state.value = .loading
+        
+        userUseCase.saveUser(updatedUser) { [weak self] result in
+            switch result {
+            case .success:
+                self?.user = updatedUser
+                self?.state.value = .saved
+            case .failure(let error):
+                self?.state.value = .error(error.localizedDescription)
+            }
+        }
+    }
+}
+
+enum ViewState {
+    case idle
+    case loading
+    case loaded(UserUIModel)
+    case saved
+    case error(String)
+}
+
+class Observable<T> {
+    var value: T {
+        didSet {
+            listener?(value)
+        }
+    }
+    
+    private var listener: ((T) -> Void)?
+    
+    init(_ value: T) {
+        self.value = value
+    }
+    
+    func bind(_ closure: @escaping (T) -> Void) {
+        listener = closure
+        closure(value)
+    }
+}
+
+// UserUIModel.swift
+struct UserUIModel {
+    let name: String
+    let email: String
+    
+    init(from entity: UserEntity) {
+        self.name = entity.name
+        self.email = entity.email
+    }
+}
+```
+
+### 4.2 View Controllers
+
+```swift
+// UserViewController.swift
+class UserViewController: UIViewController {
+    private let viewModel: UserViewModel
+    private let userId: String
+    
+    // UI elements
+    private let nameLabel = UILabel()
+    private let emailLabel = UILabel()
+    private let activityIndicator = UIActivityIndicatorView()
+    
+    init(viewModel: UserViewModel, userId: String) {
+        self.viewModel = viewModel
+        self.userId = userId
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        bindViewModel()
+        viewModel.fetchUser(withID: userId)
+    }
+    
+    private func setupUI() {
+        // Setup UI elements
+        // ...
+    }
+    
+    private func bindViewModel() {
+        viewModel.state.bind { [weak self] state in
+            DispatchQueue.main.async {
+                switch state {
+                case .idle:
+                    break
+                case .loading:
+                    self?.activityIndicator.startAnimating()
+                case .loaded(let userUIModel):
+                    self?.activityIndicator.stopAnimating()
+                    self?.updateUI(with: userUIModel)
+                case .saved:
+                    self?.activityIndicator.stopAnimating()
+                    self?.showSavedMessage()
+                case .error(let message):
+                    self?.activityIndicator.stopAnimating()
+                    self?.showError(message)
+                }
+            }
+        }
+    }
+    
+    private func updateUI(with user: UserUIModel) {
+        nameLabel.text = user.name
+        emailLabel.text = user.email
+    }
+    
+    private func showSavedMessage() {
+        // Show success message
+    }
+    
+    private func showError(_ message: String) {
+        // Show error message
+    }
+}
+```
+
+### 4.3 Coordinators
+
+```swift
+// Coordinator.swift
+protocol Coordinator: AnyObject {
+    var childCoordinators: [Coordinator] { get set }
+    var navigationController: UINavigationController { get set }
+    
+    func start()
+}
+
+extension Coordinator {
+    func addChildCoordinator(_ coordinator: Coordinator) {
+        childCoordinators.append(coordinator)
+    }
+    
+    func removeChildCoordinator(_ coordinator: Coordinator) {
+        childCoordinators = childCoordinators.filter { $0 !== coordinator }
+    }
+}
+
+// AppCoordinator.swift
+class AppCoordinator: Coordinator {
+    var childCoordinators: [Coordinator] = []
+    var navigationController: UINavigationController
+    private let diContainer: DIContainer
+    
+    init(navigationController: UINavigationController, diContainer: DIContainer) {
+        self.navigationController = navigationController
+        self.diContainer = diContainer
+    }
+    
+    func start() {
+        showUserDetails(withID: "user123")
+    }
+    
+    func showUserDetails(withID id: String) {
+        let userViewModel = diContainer.makeUserViewModel()
+        let userViewController = UserViewController(viewModel: userViewModel, userId: id)
+        navigationController.pushViewController(userViewController, animated: true)
+    }
+}
+```
+
+## 5. Dependency Injection
+
+```swift
+// DIContainer.swift
+class DIContainer {
+    // Factories
+    func makeUserRepository() -> UserRepository {
+        return UserRepositoryImpl(
+            remoteDataSource: makeUserRemoteDataSource(),
+            localDataSource: makeUserLocalDataSource()
+        )
+    }
+    
+    func makeUserRemoteDataSource() -> UserRemoteDataSource {
+        return UserRemoteDataSourceImpl(networkManager: makeNetworkManager())
+    }
+    
+    func makeUserLocalDataSource() -> UserLocalDataSource {
+        return UserLocalDataSourceImpl(coreDataManager: makeCoreDataManager())
+    }
+    
+    func makeNetworkManager() -> NetworkManager {
+        return NetworkManagerImpl()
+    }
+    
+    func makeCoreDataManager() -> CoreDataManager {
+        return CoreDataManagerImpl()
+    }
+    
+    func makeUserUseCase() -> UserUseCase {
+        return UserUseCaseImpl(userRepository: makeUserRepository())
+    }
+    
+    func makeUserViewModel() -> UserViewModel {
+        return UserViewModel(userUseCase: makeUserUseCase())
+    }
+}
+```
+
+## 6. Flow of Data and Interaction
+
+1. **User Interaction**:
+   - User interacts with `UserViewController`
+   - ViewController calls a method on `UserViewModel`
+
+2. **ViewModel to Use Case**:
+   - `UserViewModel` calls a method on `UserUseCase`
+   - ViewModel doesn't know about Repository details
+
+3. **Use Case to Repository**:
+   - `UserUseCase` processes business logic
+   - Then calls methods on `UserRepository` interface
+
+4. **Repository to Data Sources**:
+   - `UserRepositoryImpl` manages data source selection
+   - Delegates to either `UserRemoteDataSource` or `UserLocalDataSource`
+
+5. **Data Return Journey**:
+   - Data flows back through the same chain
+   - Each layer transforms data to its required format
+   - `UserDTO` → `UserEntity` → `UserUIModel`
+
+## 7. Testing Strategy
+
+Each layer can be tested independently due to clear boundaries and dependency injection:
+
+### 7.1 Domain Layer Tests
+
+```swift
+class UserUseCaseTests: XCTestCase {
+    var userUseCase: UserUseCase!
+    var mockRepository: MockUserRepository!
+    
+    override func setUp() {
+        mockRepository = MockUserRepository()
+        userUseCase = UserUseCaseImpl(userRepository: mockRepository)
+    }
+    
+    func testGetUser_Success() {
+        // Given
+        let expectedUser = UserEntity(id: "123", name: "John", email: "john@example.com")
+        mockRepository.getStudentResult = .success(expectedUser)
+        
+        // When
+        var receivedResult: Result<UserEntity, Error>?
+        userUseCase.getUser(withID: "123") { result in
+            receivedResult = result
+        }
+        
+        // Then
+        XCTAssertNotNil(receivedResult)
+        if case .success(let user) = receivedResult {
+            XCTAssertEqual(user.id, expectedUser.id)
+            XCTAssertEqual(user.name, expectedUser.name)
+            XCTAssertEqual(user.email, expectedUser.email)
+        } else {
+            XCTFail("Expected success but got failure")
+        }
+    }
+    
+    // More tests...
+}
+
+// Mock Repository for Testing
+class MockUserRepository: UserRepository {
+    var getStudentResult: Result<UserEntity, Error>!
+    var saveStudentResult: Result<Void, Error>!
+    
+    func getUser(withID id: String, completion: @escaping (Result<UserEntity, Error>) -> Void) {
+        completion(getStudentResult)
+    }
+    
+    func saveUser(_ user: UserEntity, completion: @escaping (Result<Void, Error>) -> Void) {
+        completion(saveStudentResult)
+    }
+}
+```
+
+### 7.2 Presentation Layer Tests
+
+```swift
+class UserViewModelTests: XCTestCase {
+    var viewModel: UserViewModel!
+    var mockUseCase: MockUserUseCase!
+    
+    override func setUp() {
+        mockUseCase = MockUserUseCase()
+        viewModel = UserViewModel(userUseCase: mockUseCase)
+    }
+    
+    func testFetchUser_Success() {
+        // Given
+        let expectedUser = UserEntity(id: "123", name: "John", email: "john@example.com")
+        mockUseCase.getUserResult = .success(expectedUser)
+        
+        // Create expectation for async operation
+        let expectation = XCTestExpectation(description: "Fetch user completes")
+        
+        // Hook into viewModel state changes
+        var states: [ViewState] = []
+        viewModel.state.bind { state in
+            states.append(state)
+            if case .loaded = state {
+                expectation.fulfill()
+            }
+        }
+        
+        // When
+        viewModel.fetchUser(withID: "123")
+        
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        
+        XCTAssertEqual(states.count, 2) // idle -> loading -> loaded
+        
+        if case .loaded(let userUIModel) = states.last {
+            XCTAssertEqual(userUIModel.name, expectedUser.name)
+            XCTAssertEqual(userUIModel.email, expectedUser.email)
+        } else {
+            XCTFail("Expected loaded state but got \(String(describing: states.last))")
+        }
+    }
+    
+    // More tests...
+}
+
+// Mock Use Case for Testing
+class MockUserUseCase: UserUseCase {
+    var getUserResult: Result<UserEntity, Error>!
+    var saveUserResult: Result<Void, Error>!
+    
+    func getUser(withID id: String, completion: @escaping (Result<UserEntity, Error>) -> Void) {
+        completion(getUserResult)
+    }
+    
+    func saveUser(_ user: UserEntity, completion: @escaping (Result<Void, Error>) -> Void) {
+        completion(saveUserResult)
+    }
+}
+```
+
+## 8. Common Pitfalls and Best Practices
+
+### Pitfalls to Avoid:
+1. **Leaky Abstractions**: Don't let domain layer know about data sources
+2. **Massive ViewModels**: Keep presentation logic focused
+3. **Tight Coupling**: Use dependency injection consistently
+4. **Ignoring Repository Pattern**: Don't access data sources directly from use cases
+5. **Inconsistent Error Handling**: Use Result type consistently
+
+### Best Practices:
+1. **Follow Dependency Rule**: Dependencies point inward
+2. **Use Protocols**: Define clear interfaces between layers
+3. **Consistent Naming**: Use suffixes like Entity, DTO, UseCase consistently
+4. **Testability First**: Design with testing in mind
+5. **Separation of Concerns**: Each component has a single responsibility
+
+## 9. Real-World Considerations
+
+### Handling Asynchronous Operations:
+- Consider using Swift's `async/await` with iOS 15+
+- For earlier iOS versions, use completion handlers or combine
+
+```swift
+// Modern async/await approach (iOS 15+)
+protocol UserRepository {
+    func getUser(withID id: String) async throws -> UserEntity
+    func saveUser(_ user: UserEntity) async throws
+}
+
+class UserRepositoryImpl: UserRepository {
+    func getUser(withID id: String) async throws -> UserEntity {
+        // Implementation
+    }
+    
+    func saveUser(_ user: UserEntity) async throws {
+        // Implementation
+    }
+}
+```
+
+### Reactive Programming Options:
+- Consider Combine for reactive programming needs
+
+```swift
+// Using Combine
+protocol UserRepository {
+    func getUser(withID id: String) -> AnyPublisher<UserEntity, Error>
+    func saveUser(_ user: UserEntity) -> AnyPublisher<Void, Error>
+}
+```
+
+## 10. Clean Architecture with SwiftUI
+
+For SwiftUI projects, the architecture remains similar with some adjustments:
+
+```swift
+// UserView.swift
+struct UserView: View {
+    @ObservedObject private var viewModel: UserViewModel
+    
+    init(viewModel: UserViewModel) {
+        self.viewModel = viewModel
+    }
+    
+    var body: some View {
+        switch viewModel.state {
+        case .idle, .loading:
+            ProgressView()
+                .onAppear {
+                    viewModel.fetchUser(withID: "123")
+                }
+        case .loaded(let user):
+            VStack(alignment: .leading) {
+                Text(user.name)
+                    .font(.headline)
+                Text(user.email)
+                    .font(.subheadline)
+            }
+        case .saved:
+            Text("User saved successfully!")
+        case .error(let message):
+            Text("Error: \(message)")
+                .foregroundColor(.red)
+        }
+    }
+}
+
+// Adapted ViewModel for SwiftUI
+class UserViewModel: ObservableObject {
+    @Published private(set) var state: ViewState = .idle
+    
+    private let userUseCase: UserUseCase
+    
+    init(userUseCase: UserUseCase) {
+        self.userUseCase = userUseCase
+    }
+    
+    func fetchUser(withID id: String) {
+        state = .loading
+        
+        userUseCase.getUser(withID: id) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let user):
+                    self?.state = .loaded(UserUIModel(from: user))
+                case .failure(let error):
+                    self?.state = .error(error.localizedDescription)
+                }
+            }
+        }
+    }
+    
+    // Other methods...
+}
+```
+
+## 11. Documentation Guidelines
+
+Document each component with clear descriptions of their responsibilities:
+
+```swift
+/// Represents a user in the domain layer.
+/// This entity contains core business rules and properties for users.
+struct UserEntity {
+    // Properties and methods...
+}
+
+/// Protocol defining the contract for accessing user data.
+/// This interface is implemented by the data layer but used by the domain layer.
+protocol UserRepository {
+    // Methods...
+}
+```
+
+## Conclusion
+
+Clean Architecture offers significant benefits for iOS applications:
+
+- **Maintainability**: Changes in one layer don't affect others
+- **Testability**: Each component can be tested in isolation
+- **Scalability**: New features can be added without refactoring existing code
+- **Framework Independence**: Core business logic doesn't depend on UI or external frameworks
+
+By following these principles and patterns, you can create iOS applications that are robust, testable, and adaptable to change.
